@@ -6,7 +6,8 @@ import os
 from omegaconf import OmegaConf
 from tqdm import tqdm
 from torchvision import transforms
-from torchvision.io import write_video
+# from torchvision.io import write_video
+import imageio.v2 as imageio
 from einops import rearrange
 import torch.distributed as dist
 from torch.utils.data import DataLoader, SequentialSampler
@@ -242,7 +243,14 @@ for i, batch_data in tqdm(enumerate(dataloader), disable=(local_rank != 0)):
                 output_path = os.path.join(config.output_folder, f'rank{rank}-{idx}-{seed_idx}_{model_type}.mp4')
             else:
                 output_path = os.path.join(config.output_folder, f'rank{rank}-{prompt[:100]}-{seed_idx}.mp4')
-            write_video(output_path, video[seed_idx], fps=16)
+            # write_video(output_path, video[seed_idx], fps=16)
+            imageio.mimwrite(
+                output_path,
+                video[seed_idx].detach().cpu().numpy(),
+                fps=float(16),
+                codec="libx264",
+                macro_block_size=1,
+            )
 
     if config.inference_iter != -1 and i >= config.inference_iter:
         break
